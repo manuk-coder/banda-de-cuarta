@@ -39,7 +39,7 @@ npm run start
 
 ## Audio Behavior
 
-Selecting a song loads it into the player. Audio starts only when the visitor presses play, which keeps playback predictable across browsers and mobile devices.
+Selecting a song starts playback from the song menu. If a browser blocks playback, the player keeps the selected song loaded and shows a clear play state.
 
 ## Privacy And Security
 

@@ -4,7 +4,6 @@ import Image from "next/image";
 import {
   ListMusic,
   LoaderCircle,
-  Menu,
   Pause,
   Play,
   X,
@@ -32,26 +31,38 @@ export function MusicLanding() {
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [duration, setDuration] = useState(initialSong.duration);
   const [progress, setProgress] = useState(0);
+  const [isCoverOpen, setIsCoverOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Listo para sonar");
 
-  function loadSong(song: Song) {
+  async function startSong(song: Song) {
     const audio = audioRef.current;
 
     setCurrentSong(song);
     setDuration(song.duration);
     setProgress(0);
-    setIsPlaying(false);
-    setIsLoading(false);
-    setStatusMessage("Listo para sonar");
+    setStatusMessage("");
 
-    if (audio) {
-      audio.pause();
-      audio.src = song.src;
-      audio.currentTime = 0;
+    if (!audio) {
+      return;
+    }
+
+    audio.src = song.src;
+    audio.currentTime = 0;
+    setIsLoading(true);
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+      setStatusMessage("");
+    } catch {
       audio.load();
+      setIsPlaying(false);
+      setStatusMessage("Tu navegador espera un toque para arrancar. Dale play.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -89,7 +100,7 @@ export function MusicLanding() {
 
   function handleSongSelect(song: Song) {
     setIsMenuOpen(false);
-    loadSong(song);
+    void startSong(song);
   }
 
   function handleSeek(event: ChangeEvent<HTMLInputElement>) {
@@ -144,29 +155,24 @@ export function MusicLanding() {
         sizes="100vw"
         className="object-cover object-[center_42%]"
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(90,207,255,0.34),transparent_30%),linear-gradient(115deg,rgba(3,4,16,0.9)_0%,rgba(3,4,16,0.48)_42%,rgba(3,4,16,0.84)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#04020a] via-[#04020a]/72 to-transparent" />
+      <button
+        type="button"
+        className="absolute inset-0 z-[1] cursor-zoom-in"
+        aria-label="Ver portada en pantalla completa"
+        title="Ver portada"
+        onClick={() => setIsCoverOpen(true)}
+      />
+      <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_18%_18%,rgba(90,207,255,0.34),transparent_30%),linear-gradient(115deg,rgba(3,4,16,0.9)_0%,rgba(3,4,16,0.48)_42%,rgba(3,4,16,0.84)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1/2 bg-gradient-to-t from-[#04020a] via-[#04020a]/72 to-transparent" />
 
-      <section className="relative z-10 flex min-h-dvh flex-col px-5 py-5 sm:px-8 lg:px-12">
-        <header className="flex items-center justify-between gap-4">
+      <section className="pointer-events-none relative z-10 flex min-h-dvh flex-col px-5 py-5 sm:px-8 lg:px-12">
+        <header className="pointer-events-auto flex items-center justify-between gap-4">
           <a
             href="#player"
             className="text-sm font-black uppercase tracking-[0.28em] text-[#ffdf79] outline-none transition hover:text-white focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
           >
             BandaDeCuarta
           </a>
-
-          <button
-            type="button"
-            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white shadow-[0_10px_32px_rgba(0,0,0,0.28)] backdrop-blur-md transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
-            aria-label="Abrir canciones"
-            aria-expanded={isMenuOpen}
-            aria-controls="song-menu"
-            title="Canciones"
-            onClick={() => setIsMenuOpen(true)}
-          >
-            <Menu aria-hidden="true" size={24} strokeWidth={2.4} />
-          </button>
         </header>
 
         <div className="flex flex-1 items-end pb-6 pt-20 sm:pb-8 lg:pb-10">
@@ -186,7 +192,7 @@ export function MusicLanding() {
         <section
           id="player"
           aria-label="Reproductor de BandaDeCuarta"
-          className="mb-1 grid gap-4 rounded-[8px] border border-white/18 bg-black/48 p-4 shadow-[0_16px_60px_rgba(0,0,0,0.38)] backdrop-blur-xl sm:p-5 lg:grid-cols-[auto_1fr_auto] lg:items-center"
+          className="pointer-events-auto mb-1 grid gap-4 rounded-[8px] border border-white/18 bg-black/48 p-4 shadow-[0_16px_60px_rgba(0,0,0,0.38)] backdrop-blur-xl sm:p-5 lg:grid-cols-[auto_1fr_auto] lg:items-center"
         >
           <div className="flex items-center gap-3">
             <button
@@ -326,6 +332,33 @@ export function MusicLanding() {
               </ol>
             </div>
           </aside>
+        </div>
+      ) : null}
+
+      {isCoverOpen ? (
+        <div
+          className="fixed inset-0 z-30 bg-black/95"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Portada de BandaDeCuarta"
+        >
+          <Image
+            src="/images/cover.jpg"
+            alt="Portada de BandaDeCuarta"
+            fill
+            priority
+            sizes="100vw"
+            className="object-contain p-3 sm:p-8"
+          />
+          <button
+            type="button"
+            className="absolute right-4 top-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white shadow-[0_12px_34px_rgba(0,0,0,0.42)] backdrop-blur-md transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+            aria-label="Cerrar portada"
+            title="Cerrar"
+            onClick={() => setIsCoverOpen(false)}
+          >
+            <X aria-hidden="true" size={24} />
+          </button>
         </div>
       ) : null}
 
