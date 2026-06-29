@@ -2,16 +2,29 @@
 
 import Image from "next/image";
 import {
+  FileText,
   ListMusic,
   LoaderCircle,
   Pause,
   Play,
   X,
 } from "lucide-react";
-import { type ChangeEvent, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { songs, type Song } from "@/data/songs";
 
 const initialSong = songs[0];
+
+type LyricLine = {
+  id: string;
+  kind: "line" | "break";
+  text: string;
+};
 
 function formatTime(totalSeconds: number) {
   if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
@@ -26,23 +39,83 @@ function formatTime(totalSeconds: number) {
   return `${minutes}:${seconds}`;
 }
 
+const metadataLinePattern = /^(song name|song id|audio|source song name):/i;
+
+function parseLyricsText(text: string) {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .filter((line) => !metadataLinePattern.test(line.trim()))
+    .map((line, index): LyricLine => {
+      const trimmedLine = line.trim();
+
+      return {
+        id: `${index}`,
+        kind: trimmedLine ? "line" : "break",
+        text: trimmedLine,
+      };
+    });
+}
+
 export function MusicLanding() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [duration, setDuration] = useState(initialSong.duration);
   const [progress, setProgress] = useState(0);
   const [isCoverOpen, setIsCoverOpen] = useState(false);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Listo para sonar");
+  const [lyricLines, setLyricLines] = useState<LyricLine[]>([]);
+  const [lyricsStatus, setLyricsStatus] = useState<
+    "loading" | "ready" | "missing"
+  >("loading");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch(`/lyrics/${currentSong.id}.txt`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Lyrics not found");
+        }
+
+        return response.text();
+      })
+      .then((text) => {
+        setLyricLines(parseLyricsText(text));
+        setLyricsStatus("ready");
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setLyricLines([]);
+        setLyricsStatus("missing");
+      });
+
+    return () => controller.abort();
+  }, [currentSong.id]);
+
+  const hasLyrics = useMemo(
+    () => lyricLines.some((line) => line.kind === "line"),
+    [lyricLines],
+  );
 
   async function startSong(song: Song) {
     const audio = audioRef.current;
+    const isNewSong = song.id !== currentSong.id;
 
     setCurrentSong(song);
     setDuration(song.duration);
     setProgress(0);
+    if (isNewSong) {
+      setLyricsStatus("loading");
+      setLyricLines([]);
+    }
     setStatusMessage("");
 
     if (!audio) {
@@ -103,6 +176,10 @@ export function MusicLanding() {
     void startSong(song);
   }
 
+  function openLyrics() {
+    setIsLyricsOpen(true);
+  }
+
   function handleSeek(event: ChangeEvent<HTMLInputElement>) {
     const audio = audioRef.current;
     const nextTime = Number(event.target.value);
@@ -144,6 +221,7 @@ export function MusicLanding() {
 
   const boundedProgress = Math.min(progress, duration || 0);
   const progressPercent = duration ? (boundedProgress / duration) * 100 : 0;
+  const lyricsTitle = currentSong.title;
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#04020a] text-white">
@@ -219,9 +297,20 @@ export function MusicLanding() {
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#ffdf79]">
                 Sonando ahora
               </p>
-              <h2 className="truncate text-xl font-black leading-tight text-white sm:text-2xl">
-                {currentSong.title}
-              </h2>
+              <div className="flex min-w-0 items-center gap-2">
+                <h2 className="truncate text-xl font-black leading-tight text-white sm:text-2xl">
+                  {currentSong.title}
+                </h2>
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                  aria-label={`Ver letra de ${currentSong.title}`}
+                  title="Letra"
+                  onClick={openLyrics}
+                >
+                  <FileText aria-hidden="true" size={18} />
+                </button>
+              </div>
               <p className="min-h-5 text-sm font-semibold text-white/70">
                 {statusMessage || (isPlaying ? "En vivo" : "Preparado")}
               </p>
@@ -301,37 +390,127 @@ export function MusicLanding() {
 
                   return (
                     <li key={song.id}>
-                      <button
-                        type="button"
-                        className={`grid w-full grid-cols-[2.5rem_1fr_auto] items-center gap-3 rounded-[8px] border px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79] ${
+                      <div
+                        className={`grid grid-cols-[1fr_auto] items-stretch rounded-[8px] border transition ${
                           isCurrent
                             ? "border-[#ffdf79]/80 bg-[#ffdf79]/16"
                             : "border-white/10 bg-white/6 hover:border-[#8fe7ff]/70 hover:bg-[#8fe7ff]/12"
                         }`}
-                        aria-current={isCurrent ? "true" : undefined}
-                        onClick={() => handleSongSelect(song)}
                       >
-                        <span className="text-sm font-black tabular-nums text-white/54">
-                          {(index + 1).toString().padStart(2, "0")}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-base font-black text-white">
-                            {song.title}
+                        <button
+                          type="button"
+                          className="grid min-w-0 grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                          aria-current={isCurrent ? "true" : undefined}
+                          onClick={() => handleSongSelect(song)}
+                        >
+                          <span className="text-sm font-black tabular-nums text-white/54">
+                            {(index + 1).toString().padStart(2, "0")}
                           </span>
-                          <span className="text-sm font-semibold text-white/56">
-                            {isCurrent && isPlaying ? "Reproduciendo" : "Tema"}
+                          <span className="min-w-0">
+                            <span className="block truncate text-base font-black text-white">
+                              {song.title}
+                            </span>
+                            <span className="text-sm font-semibold text-white/56">
+                              {isCurrent && isPlaying ? "Reproduciendo" : "Tema"}
+                            </span>
                           </span>
-                        </span>
-                        <span className="text-sm font-bold tabular-nums text-white/62">
-                          {formatTime(song.duration)}
-                        </span>
-                      </button>
+                          <span className="text-sm font-bold tabular-nums text-white/62">
+                            {formatTime(song.duration)}
+                          </span>
+                        </button>
+
+                        {isCurrent ? (
+                          <button
+                            type="button"
+                            className="m-2 inline-flex h-10 w-10 items-center justify-center self-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                            aria-label={`Ver letra de ${song.title}`}
+                            title="Letra"
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              openLyrics();
+                            }}
+                          >
+                            <FileText aria-hidden="true" size={18} />
+                          </button>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}
               </ol>
             </div>
           </aside>
+        </div>
+      ) : null}
+
+      {isLyricsOpen ? (
+        <div className="fixed inset-0 z-30">
+          <button
+            type="button"
+            className="absolute inset-0 h-full w-full bg-black/68 backdrop-blur-sm"
+            aria-label="Cerrar letra"
+            onClick={() => setIsLyricsOpen(false)}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lyrics-title"
+            className="absolute inset-x-3 bottom-3 top-8 mx-auto flex max-w-3xl flex-col overflow-hidden rounded-[8px] border border-white/18 bg-[#080411]/96 text-white shadow-[0_24px_70px_rgba(0,0,0,0.5)] sm:inset-x-6 sm:bottom-6 sm:top-10 lg:bottom-[8vh] lg:top-[8vh]"
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-white/12 px-5 py-4">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#8fe7ff]">
+                  Letra
+                </p>
+                <h2
+                  id="lyrics-title"
+                  className="truncate text-2xl font-black leading-tight text-white"
+                >
+                  {lyricsTitle}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                aria-label="Cerrar letra"
+                title="Cerrar"
+                onClick={() => setIsLyricsOpen(false)}
+              >
+                <X aria-hidden="true" size={22} />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6">
+              {lyricsStatus === "loading" ? (
+                <p className="text-2xl font-black text-white/72">
+                  Cargando letra...
+                </p>
+              ) : !hasLyrics ? (
+                <p className="text-2xl font-black text-white/72">
+                  Letra no disponible
+                </p>
+              ) : (
+                <div className="grid gap-3 pb-8">
+                  {lyricLines.map((line) =>
+                    line.kind === "break" ? (
+                      <div
+                        key={line.id}
+                        className="h-3"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <p
+                        key={line.id}
+                        className="text-xl font-black leading-snug text-white/88 sm:text-2xl"
+                      >
+                        {line.text}
+                      </p>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       ) : null}
 

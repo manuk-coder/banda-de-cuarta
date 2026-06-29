@@ -36,10 +36,17 @@ npm run start
 - `src/data/songs.ts` maps song titles to public audio paths.
 - `public/images/cover.jpg` is the full-screen background image.
 - `public/audio/` contains the MP3 files served by the website.
+- `public/lyrics/` contains one TXT lyric file per song.
 
 ## Audio Behavior
 
 Selecting a song starts playback from the song menu. If a browser blocks playback, the player keeps the selected song loaded and shows a clear play state.
+
+## Lyrics
+
+Lyrics live in `public/lyrics/` as one `.txt` file per song. The player loads the text file for the selected song and opens the lyrics in a scrollable modal from the lyrics icon.
+
+The app does not sync lyrics to the audio or save lyric data from the browser. A visitor's browser cannot write back to these static text files after deployment without adding a backend, database, or authenticated write flow.
 
 ## Privacy And Security
 
