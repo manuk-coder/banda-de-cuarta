@@ -366,7 +366,7 @@ export function MusicLanding() {
           aria-label="Reproductor de BandaDeCuarta"
           className="pointer-events-auto mb-1 grid gap-4 rounded-[8px] border border-white/18 bg-black/48 p-4 shadow-[0_16px_60px_rgba(0,0,0,0.38)] backdrop-blur-xl sm:p-5 lg:grid-cols-[auto_1fr_auto] lg:items-center"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#ffcf5a] text-[#130813] shadow-[0_12px_30px_rgba(255,207,90,0.28)] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -387,12 +387,12 @@ export function MusicLanding() {
               )}
             </button>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#ffdf79]">
                 Sonando ahora
               </p>
               <div className="flex min-w-0 items-center gap-2">
-                <h2 className="min-w-0 truncate text-xl font-black leading-tight text-white sm:text-2xl">
+                <h2 className="min-w-0 flex-1 truncate text-xl font-black leading-tight text-white sm:text-2xl">
                   {currentSong.title}
                 </h2>
                 <button
