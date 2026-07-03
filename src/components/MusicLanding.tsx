@@ -494,7 +494,7 @@ export function MusicLanding() {
                   return (
                     <li key={song.id} className="min-w-0">
                       <div
-                        className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch rounded-[8px] border transition ${
+                        className={`min-w-0 overflow-hidden rounded-[8px] border transition ${
                           isCurrent
                             ? "border-[#ffdf79]/80 bg-[#ffdf79]/16"
                             : "border-white/10 bg-white/6 hover:border-[#8fe7ff]/70 hover:bg-[#8fe7ff]/12"
@@ -502,31 +502,35 @@ export function MusicLanding() {
                       >
                         <button
                           type="button"
-                          className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_2.75rem] items-center gap-2 px-2 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79] sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:gap-3 sm:px-3"
+                          className="grid w-full min-w-0 gap-1.5 px-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
                           aria-current={isCurrent ? "true" : undefined}
                           onClick={() => handleSongSelect(song)}
                         >
-                          <span className="text-sm font-black tabular-nums text-white/54">
-                            {(index + 1).toString().padStart(2, "0")}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block min-w-0 truncate text-sm font-black text-white sm:text-base">
-                              {song.title}
+                          <span className="flex min-w-0 items-center justify-between gap-3">
+                            <span className="flex min-w-0 items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-white/56">
+                              <span className="tabular-nums">
+                                {(index + 1).toString().padStart(2, "0")}
+                              </span>
+                              <span>
+                                {isCurrent && isPlaying
+                                  ? "Reproduciendo"
+                                  : "Tema"}
+                              </span>
                             </span>
-                            <span className="text-sm font-semibold text-white/56">
-                              {isCurrent && isPlaying ? "Reproduciendo" : "Tema"}
+                            <span className="shrink-0 text-xs font-bold tabular-nums text-white/62 sm:text-sm">
+                              {formatTime(song.duration)}
                             </span>
                           </span>
-                          <span className="justify-self-end text-xs font-bold tabular-nums text-white/62 sm:text-sm">
-                            {formatTime(song.duration)}
+                          <span className="min-w-0 break-words text-base font-black leading-snug text-white">
+                            {song.title}
                           </span>
                         </button>
 
                         {isCurrent ? (
-                          <div className="m-1.5 flex items-center gap-1 self-center sm:m-2 sm:gap-2">
+                          <div className="flex items-center justify-end gap-2 border-t border-white/10 px-3 py-2">
                             <button
                               type="button"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79] sm:h-10 sm:w-10"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
                               aria-label={`Ver letra de ${song.title}`}
                               title="Letra"
                               onClick={() => {
@@ -538,7 +542,7 @@ export function MusicLanding() {
                             </button>
                             <button
                               type="button"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff] sm:h-10 sm:w-10"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff]"
                               aria-label={`Compartir ${song.title}`}
                               title="Compartir"
                               onClick={() => void shareSong(song)}
