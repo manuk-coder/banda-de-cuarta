@@ -108,4 +108,10 @@ export const songs: Song[] = [
     src: "/audio/mundial-pero-de-volley.mp3",
     duration: 271,
   },
+  {
+    id: "gracias-por-el-shawarma",
+    title: "Gracias por el shawarma",
+    src: "/audio/gracias-por-el-shawarma.mp3",
+    duration: 80,
+  },
 ];
