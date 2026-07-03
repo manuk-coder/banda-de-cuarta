@@ -42,6 +42,10 @@ npm run start
 
 Selecting a song starts playback from the song menu. If a browser blocks playback, the player keeps the selected song loaded and shows a clear play state.
 
+## Song Sharing
+
+The share button creates a public link with `?song=<song-id>`. Opening that link selects the shared song automatically, so it can be sent through WhatsApp or any messaging app.
+
 ## Lyrics
 
 Lyrics live in `public/lyrics/` as one `.txt` file per song. The player loads the text file for the selected song and opens the lyrics in a scrollable modal from the lyrics icon.

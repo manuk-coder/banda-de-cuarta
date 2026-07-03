@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   Pause,
   Play,
+  Share2,
   X,
 } from "lucide-react";
 import {
@@ -41,6 +42,41 @@ function formatTime(totalSeconds: number) {
 
 const metadataLinePattern = /^(song name|song id|audio|source song name):/i;
 
+function getSongFromId(songId: string | null) {
+  if (!songId) {
+    return null;
+  }
+
+  return songs.find((song) => song.id === songId) ?? null;
+}
+
+function getSongFromLocation() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+
+  return getSongFromId(searchParams.get("song"));
+}
+
+function getShareUrl(song: Song) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set("song", song.id);
+  url.hash = "";
+
+  return url.toString();
+}
+
+function updateSongUrl(song: Song) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set("song", song.id);
+  url.hash = "";
+  window.history.pushState({ songId: song.id }, "", url);
+}
+
 function parseLyricsText(text: string) {
   return text
     .replace(/\r\n/g, "\n")
@@ -72,6 +108,36 @@ export function MusicLanding() {
   const [lyricsStatus, setLyricsStatus] = useState<
     "loading" | "ready" | "missing"
   >("loading");
+
+  useEffect(() => {
+    function setSongFromSharedUrl() {
+      const sharedSong = getSongFromLocation();
+
+      if (!sharedSong) {
+        return;
+      }
+
+      const audio = audioRef.current;
+
+      audio?.pause();
+      setCurrentSong(sharedSong);
+      setDuration(sharedSong.duration);
+      setProgress(0);
+      setIsPlaying(false);
+      setLyricsStatus("loading");
+      setLyricLines([]);
+      setStatusMessage("Tema abierto desde un link compartido");
+    }
+
+    const timeoutId = window.setTimeout(setSongFromSharedUrl, 0);
+
+    window.addEventListener("popstate", setSongFromSharedUrl);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("popstate", setSongFromSharedUrl);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -109,6 +175,7 @@ export function MusicLanding() {
     const audio = audioRef.current;
     const isNewSong = song.id !== currentSong.id;
 
+    updateSongUrl(song);
     setCurrentSong(song);
     setDuration(song.duration);
     setProgress(0);
@@ -178,6 +245,33 @@ export function MusicLanding() {
 
   function openLyrics() {
     setIsLyricsOpen(true);
+  }
+
+  async function shareSong(song: Song) {
+    const url = getShareUrl(song);
+    const shareData = {
+      title: `BandaDeCuarta - ${song.title}`,
+      text: `Escuchá "${song.title}" en BandaDeCuarta`,
+      url,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setStatusMessage("Link listo para compartir");
+
+        return;
+      }
+
+      await navigator.clipboard.writeText(url);
+      setStatusMessage("Link copiado para compartir");
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      setStatusMessage("No pudimos compartir el link. Probá copiar la URL.");
+    }
   }
 
   function handleSeek(event: ChangeEvent<HTMLInputElement>) {
@@ -298,7 +392,7 @@ export function MusicLanding() {
                 Sonando ahora
               </p>
               <div className="flex min-w-0 items-center gap-2">
-                <h2 className="truncate text-xl font-black leading-tight text-white sm:text-2xl">
+                <h2 className="min-w-0 truncate text-xl font-black leading-tight text-white sm:text-2xl">
                   {currentSong.title}
                 </h2>
                 <button
@@ -309,6 +403,15 @@ export function MusicLanding() {
                   onClick={openLyrics}
                 >
                   <FileText aria-hidden="true" size={18} />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff]"
+                  aria-label={`Compartir ${currentSong.title}`}
+                  title="Compartir"
+                  onClick={() => void shareSong(currentSong)}
+                >
+                  <Share2 aria-hidden="true" size={17} />
                 </button>
               </div>
               <p className="min-h-5 text-sm font-semibold text-white/70">
@@ -420,18 +523,29 @@ export function MusicLanding() {
                         </button>
 
                         {isCurrent ? (
-                          <button
-                            type="button"
-                            className="m-2 inline-flex h-10 w-10 items-center justify-center self-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
-                            aria-label={`Ver letra de ${song.title}`}
-                            title="Letra"
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              openLyrics();
-                            }}
-                          >
-                            <FileText aria-hidden="true" size={18} />
-                          </button>
+                          <div className="m-2 flex items-center gap-2 self-center">
+                            <button
+                              type="button"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                              aria-label={`Ver letra de ${song.title}`}
+                              title="Letra"
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                openLyrics();
+                              }}
+                            >
+                              <FileText aria-hidden="true" size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff]"
+                              aria-label={`Compartir ${song.title}`}
+                              title="Compartir"
+                              onClick={() => void shareSong(song)}
+                            >
+                              <Share2 aria-hidden="true" size={17} />
+                            </button>
+                          </div>
                         ) : null}
                       </div>
                     </li>
