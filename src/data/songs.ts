@@ -96,4 +96,16 @@ export const songs: Song[] = [
     src: "/audio/osvaldo-querido-osvaldo-corazon.mp3",
     duration: 190,
   },
+  {
+    id: "adoracion-al-pela",
+    title: "Adoración al Pela",
+    src: "/audio/adoracion-al-pela.mp3",
+    duration: 250,
+  },
+  {
+    id: "mundial-pero-de-volley",
+    title: "Mundial pero de Volley",
+    src: "/audio/mundial-pero-de-volley.mp3",
+    duration: 271,
+  },
 ];
