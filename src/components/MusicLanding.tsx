@@ -486,15 +486,15 @@ export function MusicLanding() {
               </button>
             </div>
 
-            <div className="overflow-y-auto px-3 py-3">
+            <div className="overflow-y-auto px-2 py-3 sm:px-3">
               <ol className="grid gap-2">
                 {songs.map((song, index) => {
                   const isCurrent = song.id === currentSong.id;
 
                   return (
-                    <li key={song.id}>
+                    <li key={song.id} className="min-w-0">
                       <div
-                        className={`grid grid-cols-[1fr_auto] items-stretch rounded-[8px] border transition ${
+                        className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-stretch rounded-[8px] border transition ${
                           isCurrent
                             ? "border-[#ffdf79]/80 bg-[#ffdf79]/16"
                             : "border-white/10 bg-white/6 hover:border-[#8fe7ff]/70 hover:bg-[#8fe7ff]/12"
@@ -502,7 +502,7 @@ export function MusicLanding() {
                       >
                         <button
                           type="button"
-                          className="grid min-w-0 grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                          className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_2.75rem] items-center gap-2 px-2 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79] sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:gap-3 sm:px-3"
                           aria-current={isCurrent ? "true" : undefined}
                           onClick={() => handleSongSelect(song)}
                         >
@@ -510,23 +510,23 @@ export function MusicLanding() {
                             {(index + 1).toString().padStart(2, "0")}
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-base font-black text-white">
+                            <span className="block min-w-0 truncate text-sm font-black text-white sm:text-base">
                               {song.title}
                             </span>
                             <span className="text-sm font-semibold text-white/56">
                               {isCurrent && isPlaying ? "Reproduciendo" : "Tema"}
                             </span>
                           </span>
-                          <span className="text-sm font-bold tabular-nums text-white/62">
+                          <span className="justify-self-end text-xs font-bold tabular-nums text-white/62 sm:text-sm">
                             {formatTime(song.duration)}
                           </span>
                         </button>
 
                         {isCurrent ? (
-                          <div className="m-2 flex items-center gap-2 self-center">
+                          <div className="m-1.5 flex items-center gap-1 self-center sm:m-2 sm:gap-2">
                             <button
                               type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79]"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#ffdf79] hover:text-[#ffdf79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffdf79] sm:h-10 sm:w-10"
                               aria-label={`Ver letra de ${song.title}`}
                               title="Letra"
                               onClick={() => {
@@ -538,7 +538,7 @@ export function MusicLanding() {
                             </button>
                             <button
                               type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff]"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white transition hover:border-[#8fe7ff] hover:text-[#8fe7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fe7ff] sm:h-10 sm:w-10"
                               aria-label={`Compartir ${song.title}`}
                               title="Compartir"
                               onClick={() => void shareSong(song)}
